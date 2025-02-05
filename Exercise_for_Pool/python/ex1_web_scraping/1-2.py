@@ -9,6 +9,7 @@ import time
 
 
 def set_user_agent(driver):
+    """ユーザーエージェントをランダムに設定する関数"""
     user_agents = [
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.3",
@@ -29,7 +30,7 @@ def generate_url(base_url, driver):
     time.sleep(3)
 
     while True:
-
+        # 店舗のURLを取得
         new_urls = [
             elem.get_attribute("href")
             for elem in driver.find_elements(By.CLASS_NAME, "style_titleLink__oiHVJ")
@@ -59,19 +60,24 @@ def generate_url(base_url, driver):
 
 
 def get_infomation(url, driver):
+    """店舗の詳細情報を収集"""
     driver.get(url)
     driver.implicitly_wait(10)
     try:
+        # 情報を取得
         info_table = driver.find_element(By.ID, "info-table")
         name = info_table.find_element(By.ID, "info-name").text
         email = ""
         phone = info_table.find_element(
             By.CSS_SELECTOR, "#info-phone > td > ul > li > span.number"
         ).text
+
         address_full = info_table.find_element(
             By.CSS_SELECTOR,
             "#info-table > table > tbody > tr:nth-child(3) > td > p > span.region",
         ).text
+
+        # 住所を都道府県、市区町村、番地に分割
         m = re.match(r"([^\s]+[都道府県])([^\s]+[市区町村])(.+)", address_full)
         prefecture, city, street = m.groups() if m else ("", "", "")
 
@@ -81,6 +87,7 @@ def get_infomation(url, driver):
         )
         building = building[0].text if building else ""
 
+        # サイトURLを取得
         home_page = driver.find_elements(By.CSS_SELECTOR, "#sv-site > li > a")
         if home_page:
             ssl, shop_url = get_shop_url_and_ssl(
@@ -89,6 +96,7 @@ def get_infomation(url, driver):
         else:
             shop_url, ssl = "", ""
 
+        # DataFrameに情報を格納
         df = pd.DataFrame(
             {
                 "店舗名": [name],
@@ -112,6 +120,7 @@ def get_infomation(url, driver):
 
 
 def get_shop_url_and_ssl(url, driver):
+    """ショップのURLとSSL（https）かどうかを取得"""
     time.sleep(3)
     driver.get(url)
     shop_url = driver.current_url
@@ -120,6 +129,7 @@ def get_shop_url_and_ssl(url, driver):
 
 
 def collect_info(base_url, max_count, driver):
+    """指定されたURLから最大max_countの店舗情報を収集"""
     count = 0
     data = pd.DataFrame(
         {
@@ -156,6 +166,7 @@ if __name__ == "__main__":
     service = Service(r".\chromedriver-win64\chromedriver.exe")
     driver = webdriver.Chrome(service=service, options=options)
     try:
+        # 店舗情報を収集してCSVファイルに保存
         data = collect_info(url, 50, driver)
         data.to_csv("1-2.csv", index=True, encoding="cp932")
         print(f"csvファイルに保存しました")
