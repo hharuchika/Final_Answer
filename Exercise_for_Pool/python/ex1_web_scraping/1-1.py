@@ -15,9 +15,9 @@ def generate_shop_url(url: str, user_agent: dict):
 
     while True:
         url += f"{url}&p={page}"
+        time.sleep(3)
         res = requests.get(url, headers=header)
         print(f"取得中：{url}")
-        time.sleep(3)
         res.encoding = res.apparent_encoding
         soup = BeautifulSoup(res.text, "html.parser")
         link_all = soup.find_all("a", class_="style_titleLink__oiHVJ")
@@ -33,6 +33,7 @@ def generate_shop_url(url: str, user_agent: dict):
 
 def check_ssl_certificate(url):
     try:
+        time.sleep(3)
         response = requests.get(url, verify=True)
         return "TRUE"
     except requests.exceptions.SSLError:
@@ -43,6 +44,7 @@ def get_shop_info(url: str, user_agent: list) -> list:
     """店舗情報を取得する"""
     header = {"user-agent": random.choice(user_agent)}
     try:
+        time.sleep(3)
         res = requests.get(url, headers=header)
         res.encoding = res.apparent_encoding
         soup = BeautifulSoup(res.text, "html.parser")
@@ -83,13 +85,13 @@ def get_shop_info(url: str, user_agent: list) -> list:
         building = building_tag.get_text(strip=True) if building_tag else ""
 
         # ssl証明
-        shop_url_tag = soup.select_one("#sv-site > li > a")
-        if shop_url_tag:
-            shop_url = shop_url_tag.get("href")
-            ssl = check_ssl_certificate(shop_url)
-        else:
-            shop_url, ssl = "", ""
-
+        # shop_url_tag = soup.select_one("#sv-site > li > a")
+        # if shop_url_tag:
+        #     shop_url = shop_url_tag.get("href")
+        #     ssl = check_ssl_certificate(shop_url)
+        # else:
+        #     shop_url, ssl = "", ""
+        shop_url, ssl = "", ""
         df = pd.DataFrame(
             {
                 "店舗名": [name],
@@ -136,8 +138,7 @@ def save_to_csv(file_name, max_count, base_url, user_agent):
             data = pd.concat([data, new_data], ignore_index=True)
             print(f"データを追加完了 ({count + 1}/{max_count})")
             count += 1
-        time.sleep(3)
-    data.to_csv(file_name, index=True, encoding="cp932")
+    data.to_csv(file_name, index=False, encoding="cp932")
 
 
 if __name__ == "__main__":
